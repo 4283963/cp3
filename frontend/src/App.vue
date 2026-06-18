@@ -22,10 +22,22 @@
           <div class="bg-slate-800 rounded-xl p-6 shadow-lg border border-slate-700">
             <div class="flex items-center justify-between mb-4">
               <h2 class="text-xl font-semibold text-white">CO 浓度趋势</h2>
-              <span class="text-sm text-slate-400">最近 10 条数据</span>
+              <div class="flex items-center gap-3">
+                <span class="text-sm text-slate-400 flex items-center gap-2">
+                  <span
+                    class="w-2 h-2 rounded-full"
+                    :class="isRefreshing ? 'bg-primary-400 animate-ping' : 'bg-green-500'"
+                  ></span>
+                  {{ isRefreshing ? '刷新中...' : '实时同步' }}
+                </span>
+                <span class="text-sm text-slate-500">最近 10 条数据</span>
+              </div>
             </div>
             <div class="h-72">
-              <Line :data="chartData" :options="chartOptions" />
+              <Line :key="chartUpdateKey" :data="chartData" :options="chartOptions" />
+            </div>
+            <div class="mt-3 text-right text-xs text-slate-500">
+              最后更新: {{ lastUpdateTime }}
             </div>
           </div>
 
@@ -89,6 +101,9 @@
                   <span class="w-2 h-2 rounded-full mr-2" :class="getStatusDotClass(currentReading?.co_ppm || 0)"></span>
                   {{ getStatusText(currentReading?.co_ppm || 0) }}
                 </span>
+              </div>
+              <div class="mt-4 text-xs text-slate-500">
+                采样时间: {{ currentReading ? formatTime(currentReading.timestamp) : '--' }}
               </div>
             </div>
           </div>
@@ -197,7 +212,7 @@
       </div>
 
       <footer class="mt-8 text-center text-slate-500 text-sm">
-        <p>有毒气体监控系统 v1.0 | 数据每 3 秒更新一次</p>
+        <p>有毒气体监控系统 v1.0 | 数据每 3 秒自动刷新 | 下次刷新倒计时: {{ countdown }}s</p>
       </footer>
     </div>
   </div>
@@ -232,7 +247,12 @@ ChartJS.register(
 const readings = ref([])
 const currentReading = ref(null)
 const fanStatus = ref(null)
+const chartUpdateKey = ref(0)
+const isRefreshing = ref(false)
+const lastUpdateTime = ref('--')
+const countdown = ref(3)
 let refreshInterval = null
+let countdownInterval = null
 
 const chartData = computed(() => {
   const labels = readings.value.map(r => formatTime(r.timestamp))
@@ -419,17 +439,50 @@ async function updateThreshold(value) {
 }
 
 async function refreshData() {
-  await Promise.all([fetchReadings(), fetchFanStatus()])
+  isRefreshing.value = true
+  try {
+    await Promise.all([fetchReadings(), fetchFanStatus()])
+    chartUpdateKey.value++
+    lastUpdateTime.value = formatDateTime(new Date())
+  } catch (error) {
+    console.error('刷新数据失败:', error)
+  } finally {
+    setTimeout(() => {
+      isRefreshing.value = false
+    }, 300)
+  }
+}
+
+function formatDateTime(date) {
+  return date.toLocaleTimeString('zh-CN', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  })
 }
 
 onMounted(() => {
   refreshData()
-  refreshInterval = setInterval(refreshData, 3000)
+  countdown.value = 3
+
+  refreshInterval = setInterval(() => {
+    refreshData()
+    countdown.value = 3
+  }, 3000)
+
+  countdownInterval = setInterval(() => {
+    if (countdown.value > 0) {
+      countdown.value--
+    }
+  }, 1000)
 })
 
 onUnmounted(() => {
   if (refreshInterval) {
     clearInterval(refreshInterval)
+  }
+  if (countdownInterval) {
+    clearInterval(countdownInterval)
   }
 })
 </script>
