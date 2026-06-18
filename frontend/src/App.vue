@@ -10,9 +10,52 @@
             </h1>
             <p class="text-slate-400 mt-1">一氧化碳 (CO) 浓度实时监控与风机联动控制</p>
           </div>
-          <div class="flex items-center gap-2">
-            <span class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></span>
-            <span class="text-sm text-slate-400">系统运行中</span>
+          <div class="flex items-center gap-6">
+            <div
+              class="flex items-center gap-3 px-4 py-2.5 rounded-xl border transition-all duration-300"
+              :class="fanStatus?.is_running
+                ? 'bg-green-500/10 border-green-500/40 shadow-lg shadow-green-500/10'
+                : 'bg-slate-800 border-slate-700'"
+            >
+              <div class="relative">
+                <svg
+                  class="w-8 h-8 transition-all duration-500"
+                  :class="fanStatus?.is_running ? 'text-green-400 fan-spinning' : 'text-slate-500'"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"/>
+                  <path d="M12 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-4 4c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm4 4c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm4-4c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
+                </svg>
+                <svg
+                  v-if="fanStatus?.is_running"
+                  class="absolute inset-0 w-8 h-8 text-green-400 fan-spinning"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                >
+                  <path d="M12 3C12 3 8 7 8 12C8 17 12 21 12 21" stroke-linecap="round"/>
+                  <path d="M12 3C12 3 16 7 16 12C16 17 12 21 12 21" stroke-linecap="round"/>
+                  <circle cx="12" cy="12" r="2.5"/>
+                </svg>
+              </div>
+              <div class="flex flex-col">
+                <span
+                  class="text-sm font-bold transition-colors duration-300"
+                  :class="fanStatus?.is_running ? 'text-green-400' : 'text-slate-500'"
+                >
+                  {{ fanStatus?.is_running ? '风机运行中' : '风机已停止' }}
+                </span>
+                <span class="text-xs text-slate-500">
+                  {{ fanStatus?.device_code || 'FAN-001' }}
+                </span>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></span>
+              <span class="text-sm text-slate-400">系统运行中</span>
+            </div>
           </div>
         </div>
       </header>
@@ -115,6 +158,21 @@
                 class="w-4 h-4 rounded-full"
                 :class="fanStatus?.is_running ? 'bg-green-500 animate-pulse' : 'bg-slate-500'"
               ></div>
+            </div>
+
+            <div class="mb-4 p-3 bg-slate-700/50 rounded-lg">
+              <div class="flex items-center justify-between text-sm">
+                <span class="text-slate-400">设备名称</span>
+                <span class="text-slate-200 font-medium">{{ fanStatus?.name || '--' }}</span>
+              </div>
+              <div class="flex items-center justify-between text-sm mt-1.5">
+                <span class="text-slate-400">设备编号</span>
+                <span class="text-slate-300 font-mono text-xs">{{ fanStatus?.device_code || '--' }}</span>
+              </div>
+              <div class="flex items-center justify-between text-sm mt-1.5">
+                <span class="text-slate-400">安装位置</span>
+                <span class="text-slate-300">{{ fanStatus?.location || '--' }}</span>
+              </div>
             </div>
 
             <div class="mb-6">
@@ -486,3 +544,18 @@ onUnmounted(() => {
   }
 })
 </script>
+
+<style scoped>
+@keyframes fan-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.fan-spinning {
+  animation: fan-spin 0.8s linear infinite;
+}
+</style>

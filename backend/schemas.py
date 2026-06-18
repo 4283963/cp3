@@ -19,20 +19,23 @@ class GasReading(GasReadingBase):
         from_attributes = True
 
 
-class FanStatusBase(BaseModel):
+class FanDeviceBase(BaseModel):
     is_running: bool
     auto_mode: bool
     threshold_ppm: float
 
 
-class FanStatusUpdate(BaseModel):
+class FanDeviceUpdate(BaseModel):
     is_running: Optional[bool] = None
     auto_mode: Optional[bool] = None
     threshold_ppm: Optional[float] = None
 
 
-class FanStatus(FanStatusBase):
+class FanDevice(FanDeviceBase):
     id: int
+    name: str
+    device_code: str
+    location: str
     updated_at: datetime
 
     class Config:
